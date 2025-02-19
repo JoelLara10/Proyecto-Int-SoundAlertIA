@@ -7,6 +7,8 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { registerUser } = require('../controllers/userController'); 
 const authController = require('../controllers/authController');
+const { updateProfilePicture } = require('../controllers/authController');
+
 
 const router = express.Router();
 
@@ -30,6 +32,36 @@ const verificarEdad = (req, res, next) => {
 
     next();
 };
+
+// Middleware para verificar el token JWT
+const verifyToken = (req, res, next) => {
+  const token = req.headers['authorization']?.split(' ')[1]; // Obtener el token desde el encabezado
+
+  if (!token) {
+    return res.status(403).json({ message: 'Token no proporcionado' });
+  }
+
+  jwt.verify(token, '5323e16709b230bb1764a10b640116c29e7723444fa4423a1824c3f9c47696e9aa5fe0d361948b8b005e36860b9fdeb853027a0b11a027b5183e120c522caea2', (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: 'Token inválido' });
+    }
+    req.userId = decoded.id; // Almacenar el ID del usuario decodificado
+    next();
+  });
+};
+
+// Ruta para obtener los datos del perfil
+router.get('/profile', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId); // Buscar al usuario por su ID
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ message: 'Error del servidor' });
+  }
+});
 
 // Ruta para registrar un nuevo usuario
 router.post('/register', verificarEdad, registerUser); // Agrega el middleware de verificación de edad antes de registrar al usuario
@@ -56,4 +88,7 @@ router.post('/reset-password', authController.resetPassword);
 
 // Ruta para encontrar a un solo usuario mediante correo
 router.get('/usuario/:email', authController.buscarUsuarioPorCorreo);
+
+//router.post('/update-profile-picture', verifyToken, upload.single('foto_perfil'), updateProfilePicture);
+
 module.exports = router;
