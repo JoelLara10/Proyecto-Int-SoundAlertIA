@@ -8,7 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 require('dotenv').config();
 const app = express();
 const path = require('path');
-const uploadRouter = require('./routes/upload'); 
+//const uploadRouter = require('./routes/upload'); 
 //console.log("EMAIL_USER:", process.env.EMAIL_USER);
 //console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "Cargado " : "No cargado ");
 
@@ -24,10 +24,10 @@ app.use('/api/auth', authRoutes);
 //app.use('/api/user', userRoutes);
 
 // Middleware para servir archivos estáticos desde la carpeta 'uploads'
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+//app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Usa el enrutador de carga
-app.use('/upload', uploadRouter); 
+//app.use('/api/auth/upload', uploadRouter); 
 
 // Conexión a la base de datos
 mongoose.connect(process.env.MONGO_URI)

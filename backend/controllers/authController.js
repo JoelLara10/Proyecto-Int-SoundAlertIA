@@ -1,48 +1,48 @@
-const bcrypt = require( 'bcryptjs' );
-const jwt = require( 'jsonwebtoken' );
-const User = require( '../models/User' );
-const nodemailer = require( 'nodemailer' );
-require( 'dotenv' ).config();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const nodemailer = require('nodemailer');
+require('dotenv').config();
 
-// Inicio de sesión 
-exports.login = async ( req, res ) => {
+exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    let user = await User.findOne( { email } );
+    let user = await User.findOne({ email });
 
-    if ( !user ) {
-      return res.status( 400 ).json( { msg: 'Credenciales incorrectas' } );
+    if (!user) {
+      return res.status(400).json({ msg: 'Credenciales incorrectas' });
     }
 
-    // Verificar si el usuario está bloqueado
-    if ( user.bloqueo_hasta && new Date() < user.bloqueo_hasta ) {
-      return res.status( 403 ).json( { msg: 'Cuenta bloqueada. Inténtalo en 3 minutos.' } );
+    // Verificar si la cuenta está bloqueada
+    if (user.bloqueo_hasta && new Date() < user.bloqueo_hasta) {
+      return res.status(403).json({ msg: `Cuenta bloqueada. Inténtalo después de ${Math.ceil((user.bloqueo_hasta - new Date()) / 60000)} minutos.` });
     }
 
-    const isMatch = await bcrypt.compare( password, user.password );
-    if ( !isMatch ) {
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
       user.intentos += 1;
 
       // Bloquear cuenta si ha fallado 3 veces
-      if ( user.intentos >= 3 ) {
-        user.bloqueo_hasta = new Date( Date.now() + 3 * 60 * 1000 ); // 3 minutos de bloqueo
+      if (user.intentos >= 3) {
+        user.bloqueo_hasta = new Date(Date.now() + 3 * 60 * 1000); // Bloquear por 3 minutos
         await user.save();
-        return res.status( 403 ).json( { msg: 'Cuenta bloqueada. Inténtalo en 3 minutos.' } );
+        return res.status(403).json({ msg: 'Cuenta bloqueada. Inténtalo en 3 minutos.' });
       }
 
       await user.save();
-      return res.status( 400 ).json( { msg: 'Credenciales incorrectas' } );
+      return res.status(400).json({ msg: 'Credenciales incorrectas' });
     }
 
-    // Restablecer intentos fallidos si inicia sesión correctamente
+    // Restablecer intentos si inicia sesión correctamente
     user.intentos = 0;
     user.bloqueo_hasta = null;
     await user.save();
 
     const payload = { userId: user.id, rol: user.rol };
-    const token = jwt.sign( payload, process.env.JWT_SECRET, { expiresIn: '1h' } );
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    res.json( {
+    res.json({
       token,
       user: {
         id: user._id,
@@ -56,12 +56,13 @@ exports.login = async ( req, res ) => {
         intentos: user.intentos,
         bloqueo_hasta: user.bloqueo_hasta
       }
-    } );
+    });
 
-  } catch ( error ) {
-    res.status( 500 ).json( { msg: 'Error en el servidor' } );
+  } catch (error) {
+    res.status(500).json({ msg: 'Error en el servidor' });
   }
 };
+
 
 exports.recuperarPassword = async ( req, res ) => {
   try {
@@ -136,6 +137,12 @@ exports.resetPassword = async ( req, res ) => {
 exports.buscarUsuarioPorCorreo = async ( req, res ) => {
   try {
     const { email } = req.params; // Tomamos el email desde los parámetros de la URL
+    
+    if (!email) {
+      return res.status(400).json({ msg: 'Debe proporcionar un email válido.' });
+    }
+    
+    
     const user = await User.findOne( { email } );
 
     if ( !user ) {
@@ -160,5 +167,26 @@ exports.buscarUsuarioPorCorreo = async ( req, res ) => {
     res.status( 500 ).json( { msg: 'Error en el servidor' } );
   }
 };
+
+// exports.updateProfilePicture = async (req, res) => {
+//   try {
+//     if (!req.file) {
+//       return res.status(400).json({ message: 'No se ha subido ninguna imagen' });
+//     }
+
+//     const user = await User.findById(req.userId); // Obtener usuario autenticado
+//     if (!user) {
+//       return res.status(404).json({ message: 'Usuario no encontrado' });
+//     }
+
+//     user.foto_perfil = `/uploads/${req.file.filename}`; // Guardar ruta de la imagen en el usuario
+//     await user.save();
+
+//     res.json({ message: 'Foto actualizada correctamente', foto_perfil: user.foto_perfil });
+//   } catch (error) {
+//     console.error('Error al actualizar la foto de perfil:', error);
+//     res.status(500).json({ message: 'Error del servidor' });
+//   }
+// };
 
 
