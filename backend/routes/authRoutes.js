@@ -68,15 +68,6 @@ router.get( '/profile', verifyToken, async ( req, res ) => {
 // Ruta para registrar un nuevo usuario
 router.post( '/register', verificarEdad, registerUser ); // Agrega el middleware de verificación de edad antes de registrar al usuario
 
-// Ruta para obtener todos los usuarios
-router.get( '/usuarios', async ( req, res ) => {
-  try {
-    const usuarios = await User.find();  // Encuentra todos los usuarios en la base de datos
-    res.json( usuarios );  // Devuelve los usuarios en formato JSON
-  } catch ( error ) {
-    res.status( 500 ).json( { msg: 'Error al obtener los usuarios' } );
-  }
-} );
 
 // Ruta para iniciar sesion
 router.post( '/login', authController.login );
