@@ -2,6 +2,20 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User'); // Importa el modelo
 const mongoose = require('mongoose');
+const { importExcel, exportExcel } = require('../controllers/excelController');
+const multer = require('multer');
+
+// Configuración de multer para almacenar en memoria
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// Ruta para importar usuarios desde un archivo Excel
+router.post('/import-excel', upload.single('file'), importExcel);
+
+// Descargar usuarios en Excel
+router.get('/export-excel', (req, res) => {
+    exportExcel(req, res, User, 'usuarios.xlsx');
+});
 
 // Obtener todos los usuarios
 router.get('/usuarios', async (req, res) => {
