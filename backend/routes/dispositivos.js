@@ -42,9 +42,15 @@ router.post('/', async (req, res) => {
   try {
     const { dispositivo_id, usuario_id, ubicacion, estado } = req.body;
 
+    // Verificar que usuario_id sea un ObjectId válido
+    if (!mongoose.Types.ObjectId.isValid(usuario_id)) {
+      return res.status(400).json({ msg: 'Error: usuario_id no es un ObjectId válido.' });
+    }
+
+    // Crear el nuevo dispositivo con usuario_id convertido a ObjectId
     const nuevoDispositivo = new Dispositivo({
       dispositivo_id,
-      usuario_id,
+      usuario_id: new mongoose.Types.ObjectId(usuario_id), // Convertir usuario_id a ObjectId
       ubicacion,
       estado
     });
