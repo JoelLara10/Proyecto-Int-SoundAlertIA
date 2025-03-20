@@ -1,15 +1,17 @@
-import uvicorn
-from fastapi import FastAPI
-from routes import alerta  # Asegúrate de que esta importación sea correcta
+from flask import Flask
+from flask_cors import CORS
+from routes.alerta import alerta_routes
+from config.database import mongo
 
-app = FastAPI()
+app = Flask(__name__)
+CORS(app)  # Permite peticiones desde el frontend
 
-# Incluir el router de alertas
-app.include_router(alerta.router, prefix="/api/alertas", tags=["Alertas"])
+# Configuración de MongoDB
+app.config["MONGO_URI"] = "mongodb://localhost:27017/SoundAlertIA"
+mongo.init_app(app)
 
-@app.get("/")
-async def home():
-    return {"message": "API de Alertas funcionando"}
+# Registrar las rutas de alertas
+app.register_blueprint(alerta_routes, url_prefix="/api/alertas")
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=5000, reload=True)
+    app.run(debug=True, port=5000)

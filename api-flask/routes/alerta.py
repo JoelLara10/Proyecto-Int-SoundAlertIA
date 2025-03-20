@@ -1,31 +1,12 @@
-from fastapi import APIRouter
+from flask import Blueprint
+from controllers.alerta_controller import *
 
-router = APIRouter()
+alerta_routes = Blueprint("alerta_routes", __name__)
 
-@router.post("/")
-async def agregar_alerta():
-    return {"message": "Alerta agregada"}
-
-@router.get("/")
-async def obtener_alertas():
-    return {"message": "Lista de alertas"}
-
-@router.get("/{id}")
-async def obtener_alerta(id: str):
-    return {"message": f"Detalles de alerta {id}"}
-
-@router.put("/{id}")
-async def actualizar_alerta(id: str):
-    return {"message": f"Alerta {id} actualizada"}
-
-@router.delete("/{id}")
-async def eliminar_alerta(id: str):
-    return {"message": f"Alerta {id} eliminada"}
-
-@router.post("/import-excel")
-async def importar_excel():
-    return {"message": "Excel importado"}
-
-@router.get("/export-excel")
-async def exportar_excel():
-    return {"message": "Excel exportado"}
+alerta_routes.route("/", methods=["POST"])(agregar_alerta)
+alerta_routes.route("/", methods=["GET"])(obtener_alertas)
+alerta_routes.route("/<id>", methods=["GET"])(obtener_alerta)
+alerta_routes.route("/<id>", methods=["PUT"])(actualizar_alerta)
+alerta_routes.route("/<id>", methods=["DELETE"])(eliminar_alerta)
+alerta_routes.route("/import-excel", methods=["POST"])(importar_excel)
+alerta_routes.route("/export-excel", methods=["GET"])(exportar_excel)
