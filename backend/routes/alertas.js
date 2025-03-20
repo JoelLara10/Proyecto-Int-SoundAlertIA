@@ -9,6 +9,42 @@ const mongoose = require('mongoose');
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+// Función para enviar notificaciones
+async function enviarNotificacion(token, mensaje) {
+  const message = {
+      notification: {
+          title: "Alerta de sonido",
+          body: mensaje,
+      },
+      token: token,
+  };
+
+  try {
+      await admin.messaging().send(message);
+      console.log("Notificación enviada");
+  } catch (error) {
+      console.error("Error enviando notificación:", error);
+  }
+}
+
+// **Ruta para recibir alertas**
+router.post("/", async (req, res) => {
+  try {
+      const nuevaAlerta = new Alerta(req.body);
+      await nuevaAlerta.save();
+
+      // Obtener todos los dispositivos y enviar notificación
+      const dispositivos = await Dispositivo.find();
+      dispositivos.forEach((d) => {
+          enviarNotificacion(d.token, `Se detectó un sonido en ${req.body.ubicacion}`);
+      });
+
+      res.status(201).json({ message: "Alerta guardada y notificación enviada" });
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+});
+
 router.post('/import-excel', upload.single('file'), importarAlertas);
 
 // // Descargar alertas en Excel
