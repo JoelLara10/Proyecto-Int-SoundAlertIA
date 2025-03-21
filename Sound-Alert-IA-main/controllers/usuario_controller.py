@@ -9,21 +9,42 @@ def agregar_usuario():
     UsuarioModel.agregar_usuario(data)
     return jsonify({"message": "Usuario agregado correctamente"}), 201
 
-# Obtener todos los usuarios
 def obtener_usuarios():
     usuarios = UsuarioModel.obtener_todos_usuarios()
+    
+    # Asegurarse de que cada usuario tiene _id antes de convertirlo
+    for usuario in usuarios:
+        if "_id" in usuario:
+            usuario["_id"] = str(usuario["_id"])
+    
     return jsonify(usuarios)
 
 # Obtener un usuario específico
 def obtener_usuario(id):
-    usuario = UsuarioModel.obtener_usuario(ObjectId(id))
-    return jsonify(usuario) if usuario else jsonify({"message": "Usuario no encontrado"}), 404
+    usuario = UsuarioModel.obtener_usuario(id)
+    
+    if usuario:
+        usuario['_id'] = str(usuario['_id'])  # Convertir ObjectId a string
+        return jsonify(usuario)
+    
+    return jsonify({"message": "Usuario no encontrado"}), 404
 
-# Actualizar un usuario
 def actualizar_usuario(id):
     data = request.json
-    result = UsuarioModel.actualizar_usuario(ObjectId(id), data)
-    return jsonify({"message": "Usuario actualizado"}) if result.modified_count else jsonify({"message": "No se modificó nada"}), 400
+    try:
+        # Convertir id a ObjectId si es necesario
+        object_id = ObjectId(id)
+        result = UsuarioModel.actualizar_usuario(object_id, data)
+
+        # Si se actualizó correctamente, o si no hubo cambios, se responde apropiadamente
+        if result["success"]:
+            return jsonify({"message": result["message"]}), 200  # Usuario actualizado o no hubo cambios
+        else:
+            return jsonify({"message": result["message"]}), 400  # Error de actualización o no se encontraron cambios
+    except Exception as e:
+        return jsonify({"message": "Error al procesar la solicitud", "error": str(e)}), 500
+
+
 
 # Eliminar un usuario
 def eliminar_usuario(id):

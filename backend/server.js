@@ -11,12 +11,12 @@ const userRoutes = require("./routes/usuarios");
 const dispositivoRoutes = require("./routes/dispositivos");
 const alertaRoutes = require("./routes/alertas");
 
-const admin = require("firebase-admin");
-const serviceAccount = require("./firebase-config.json"); // Configuración de Firebase
+// const admin = require("firebase-admin");
+// const serviceAccount = require("./firebase-config.json"); // Configuración de Firebase
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-});
+// admin.initializeApp({
+//     credential: admin.credential.cert(serviceAccount),
+// });
 
 const app = express();
 
