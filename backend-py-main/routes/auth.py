@@ -8,7 +8,7 @@ from config.database import mongo
 
 auth_routes = Blueprint('auth', __name__)
 
-SECRET_KEY = "tu_secreto"
+SECRET_KEY = "5323e16709b230bb1764a10b640116c29e7723444fa4423a1824c3f9c47696e9aa5fe0d361948b8b005e36860b9fdeb853027a0b11a027b5183e120c522caea2"
 
 @auth_routes.route('/register', methods=['POST'])
 def register():
@@ -60,7 +60,13 @@ def login():
     # Restablecer intentos si inicia sesión correctamente
     mongo.db.users.update_one({"email": data['email']}, {"$set": {"intentos": 0, "bloqueo_hasta": None}})
 
-    token = jwt.encode({"user_id": str(user["_id"]), "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)}, SECRET_KEY, algorithm="HS256")
+    token = jwt.encode(
+      {"user_id": str(user["_id"]), "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)},
+      SECRET_KEY,
+      algorithm="HS256"
+    )
+
+
 
     return jsonify({"token": token, "user": {k: v for k, v in user.items() if k != "password"}})
 
