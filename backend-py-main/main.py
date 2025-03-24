@@ -11,6 +11,7 @@ CORS(app)  # Permite peticiones desde el frontend
 
 # Configuración de MongoDB
 app.config["MONGO_URI"] = "mongodb://localhost:27017/SoundAlertIA"
+#app.config["MONGO_URI"] = "mongodb+srv://admin:Joel1234@soundalertia.fuoti.mongodb.net/?retryWrites=true&w=majority&appName=SoundAlertIA"
 mongo.init_app(app)
 
 # Registrar las rutas de alertas
