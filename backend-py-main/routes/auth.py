@@ -3,12 +3,16 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import jwt
 import datetime
 import smtplib
+import os
+from bson import ObjectId  # Para manejar ObjectId de MongoDB
 from email.mime.text import MIMEText
 from config.database import mongo
 
 auth_routes = Blueprint('auth', __name__)
 
-SECRET_KEY = "5323e16709b230bb1764a10b640116c29e7723444fa4423a1824c3f9c47696e9aa5fe0d361948b8b005e36860b9fdeb853027a0b11a027b5183e120c522caea2"
+SECRET_KEY = os.getenv("JWT_SECRET")
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASS = os.getenv("EMAIL_PASS")
 
 @auth_routes.route('/register', methods=['POST'])
 def register():
@@ -80,6 +84,28 @@ def buscar_usuario(email):
     return jsonify({"user": {k: v for k, v in user.items() if k != "password"}})
 
 
+
+
+@auth_routes.route('/reset-password', methods=['POST'])
+def reset_password():
+    data = request.json
+    try:
+        decoded = jwt.decode(data["token"], SECRET_KEY, algorithms=["HS256"])
+        user_id = ObjectId(decoded["user_id"])  # Convertir a ObjectId
+
+        user = mongo.db.users.find_one({"_id": user_id})
+        if not user:
+            return jsonify({"msg": "Usuario no encontrado"}), 400
+
+        hashed_password = generate_password_hash(data["password"])
+        mongo.db.users.update_one({"_id": user_id}, {"$set": {"password": hashed_password}})
+        return jsonify({"msg": "Contraseña restablecida con éxito"}), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({"msg": "El token ha expirado"}), 400
+    except jwt.InvalidTokenError:
+        return jsonify({"msg": "Token inválido"}), 400
+
 @auth_routes.route('/recuperar-password', methods=['POST'])
 def recuperar_password():
     data = request.json
@@ -92,35 +118,15 @@ def recuperar_password():
 
     msg = MIMEText(f"Haz clic en el siguiente enlace para restablecer tu contraseña:\n http://localhost:5173/reset-password/{token}")
     msg["Subject"] = "Recuperación de contraseña"
-    msg["From"] = "tu_correo@gmail.com"
+    msg["From"] = EMAIL_USER
     msg["To"] = user["email"]
 
     try:
         server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
-        server.login("tu_correo@gmail.com", "tu_contraseña")
-        server.sendmail("tu_correo@gmail.com", user["email"], msg.as_string())
+        server.login(EMAIL_USER, EMAIL_PASS)
+        server.sendmail(EMAIL_USER, user["email"], msg.as_string())
         server.quit()
         return jsonify({"msg": "Se ha enviado un correo con instrucciones"}), 200
     except Exception as e:
         return jsonify({"msg": "Error enviando el correo", "error": str(e)}), 500
-
-
-@auth_routes.route('/reset-password', methods=['POST'])
-def reset_password():
-    data = request.json
-    try:
-        decoded = jwt.decode(data["token"], SECRET_KEY, algorithms=["HS256"])
-        user = mongo.db.users.find_one({"_id": decoded["user_id"]})
-
-        if not user:
-            return jsonify({"msg": "Usuario no encontrado"}), 400
-
-        hashed_password = generate_password_hash(data["password"])
-        mongo.db.users.update_one({"_id": decoded["user_id"]}, {"$set": {"password": hashed_password}})
-        return jsonify({"msg": "Contraseña restablecida con éxito"}), 200
-
-    except jwt.ExpiredSignatureError:
-        return jsonify({"msg": "El token ha expirado"}), 400
-    except jwt.InvalidTokenError:
-        return jsonify({"msg": "Token inválido"}), 400
